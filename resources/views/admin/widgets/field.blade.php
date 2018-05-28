@@ -1,0 +1,1 @@
+<div class="">{{ $item->{$content['field']} }}</div>

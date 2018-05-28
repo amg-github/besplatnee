@@ -1,0 +1,74 @@
+{
+    "name": "laravel/laravel",
+    "description": "The Laravel Framework.",
+    "keywords": ["framework", "laravel"],
+    "license": "MIT",
+    "type": "project",
+    "require": {
+        "php": ">=5.6.4",
+        "alexusmai/ruslug": "^0.6.0",
+        "algolia/algoliasearch-client-php": "^1.20",
+        "barryvdh/laravel-debugbar": "dev-master",
+        "dawson/youtube": "^4.1",
+        "filp/whoops": "~2.0",
+        "intervention/image": "^2.4",
+        "laravel/framework": "5.5.*",
+        "laravel/passport": "^3.0",
+        "laravel/scout": "^3.0",
+        "laravel/tinker": "~1.0",
+        "laravelrus/sleepingowl": "4.*@dev",
+        "nicolaslopezj/searchable": "1.*",
+        "nutnet/laravel-sms": "~0.1",
+        "tom-lingham/searchy": "2.*",
+        "waavi/translation": "2.3.x",
+        "websecret/laravel-search": "^2.1",
+        "yandex/geo": "^1.1",
+        "zelenin/smsru": "~4"
+    },
+    "require-dev": {
+        "fzaninotto/faker": "~1.4",
+        "mockery/mockery": "0.9.*",
+        "phpunit/phpunit": "~6.0"
+    },
+    "autoload": {
+        "classmap": [
+            "database"
+        ],
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "files": [
+            "app/Http/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-root-package-install": [
+            "php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "php artisan key:generate"
+        ],
+        "post-install-cmd": [
+            "Illuminate\\Foundation\\ComposerScripts::postInstall",
+            "php artisan optimize"
+        ],
+        "post-update-cmd": [
+            "Illuminate\\Foundation\\ComposerScripts::postUpdate",
+            "php artisan optimize"
+        ],
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover"
+        ]
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true
+    }
+}

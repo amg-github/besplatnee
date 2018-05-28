@@ -1,0 +1,1 @@
+<input type="password" class="col-xs-12" placeholder="{{ $help }}" name="{{ $name }}" value="{{ request()->input($name) }}">

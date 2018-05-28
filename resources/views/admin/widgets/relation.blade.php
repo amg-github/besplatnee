@@ -1,0 +1,1 @@
+{!! $item->{$content['relation']}->map($content['view'])->implode($content['separator']) !!}

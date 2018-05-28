@@ -1,0 +1,1 @@
+<div class="">{{ method_exists($item, $content['field']) ? $item->{$content['field']}() : $item->{$content['field']} }}</div>
