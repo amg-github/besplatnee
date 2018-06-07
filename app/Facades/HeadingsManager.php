@@ -93,7 +93,7 @@ class HeadingsManager extends ModelsManager {
 
 		return route('category', array_merge([
             'alias' => $heading['alias_international'],
-            'city' => 'v_' . str_replace('-', '_', config('area')->getInternationalInName()),
+            'city' => 'v_' . str_replace('-', '_', config('area')->genitive_alias),
             'sort' => __('sorts.fakeupdated_at.alias'),
         ], $properties));
 	}
@@ -407,7 +407,7 @@ class HeadingsManager extends ModelsManager {
 						'caption' => $propertyValue->title,
 						'url' => route('category', [
 				            'alias' => $alias->alias_international,
-				            'city' => 'v_' . \Config::get('area')->aliases()->where('language',  \App::getLocale())->first()->ergative_international,
+				            'city' => 'v_' . \Config::get('area')->alias,
 				            'sort' => 'novye',
 				        ]),
 					];
@@ -476,7 +476,7 @@ class HeadingsManager extends ModelsManager {
 					'caption' => $propertyValue->title,
 					'url' => route('category', [
 			            'alias' => $child->alias_international,
-			            'city' => 'v_' . \Config::get('area')->aliases()->where('language',  \App::getLocale())->first()->ergative_international,
+			            'city' => 'v_' . \Config::get('area')->alias,
 			            'sort' => 'novye',
 			        ]),
 				];

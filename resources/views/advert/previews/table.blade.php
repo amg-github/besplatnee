@@ -11,7 +11,9 @@
                 <li><a href="" class="site-action" alt="Добавить в избранное" data-action="follow"><img src="img/post-params/1.png" alt=""></a></li>
                 <!--<li><a href=""><img src="img/post-params/2.png" alt=""></a></li>-->
                 <li><a href="" alt="Не показывать мне" class="site-action" data-action="hide"><img src="img/post-params/3.png" alt=""></a></li>
-                <li><a href="" alt="Удалить из газеты" class="site-action" data-action="remove"><img src="img/post-params/4.png" alt=""></a></li>
+                @can('edit', $advert)
+                    <li><a href="" alt="Удалить из газеты" class="site-action" data-action="remove"><img src="img/post-params/4.png" alt=""></a></li>
+                @endcan
             </ul>
         </div>
 
@@ -31,7 +33,11 @@
 
             
                 <div class="post-item-desc-wrapper block-right">
-                    <div class="post-item-subtitle">г. {{ config('area')->getName() }}</div>
+                    <div class="post-item-subtitle">@if(isset($advert->geoObjects[0]))
+                            г. {{ $advert->geoObjects[0]->name }}
+                        @else
+                            г. {{ config('area')->name }}
+                        @endif</div>
                 </div>
             
             <div class="clearfix"></div>
@@ -42,9 +48,13 @@
             </div>
 
             <div class="post-item-desc-wrapper">
-                <div class="post-item-desc site-advert-field" data-field="content" data-type="textarea">{!! str_limit($advert->content, 300, '...') !!} 
-                
-                                г. {{ config('area')->getName() }}
+                <div class="post-item-desc site-advert-field" data-field="content" data-type="textarea">{!! str_limit($advert->content, 300, '...') !!}
+
+                    @if(isset($advert->geoObjects[0]))
+                        г. {{ $advert->geoObjects[0]->name }}
+                    @else
+                        г. {{ config('area')->name }}
+                    @endif
                             </div>
             </div>
 
@@ -62,6 +72,13 @@
             </div>
             <div class="clearfix"></div>
 
+            @if($advert->contacts)
+                <div class="post-item-desc-wrapper block-left">
+                    <div class="post-item-tags" style="color: #9c9c9c; font-size: 12px">
+                        Доп. контакты: {{$advert->contacts}}
+                    </div>
+                </div><br>
+            @endif
             <div class="post-item-link block-left" style="color: #9c9c9c">
                 @foreach($advert->getHeadingPath() as $heading)
                     @if($loop->index > 0)

@@ -54,15 +54,48 @@ class AdvertsManager extends ModelsManager
 		}
 
 		if(isset($data['city_ids'])) { 
-			$advert->setCities($data['city_ids']);
+			$advert->setObjects($data['city_ids']);
+
+            if (isset($data['id'])) {
+                if ($advert->heading_id != $data['heading_id']) {
+                    $this->_increaseTotal($data['city_ids'], $data['heading_id']);
+                    $this->_decreaseTotal($data['city_ids'], $advert->heading_id);
+                } else {
+                    $this->_increaseTotal($data['city_ids']);
+                }
+            } else {
+                $this->_increaseTotal($data['city_ids']);
+            }
 		}
 
 		if(isset($data['region_ids'])) { 
-			$advert->setRegions($data['region_ids']);
+			$advert->setObjects($data['region_ids']);
+
+            if (isset($data['id'])) {
+                if ($advert->heading_id != $data['heading_id']) {
+                    $this->_increaseTotal($data['region_ids'], $data['heading_id']);
+                    $this->_decreaseTotal($data['region_ids'], $advert->heading_id);
+                } else {
+                    $this->_increaseTotal($data['city_ids']);
+                }
+            } else {
+                $this->_increaseTotal($data['region_ids']);
+            }
 		}
 
 		if(isset($data['country_ids'])) { 
-			$advert->setCountries($data['country_ids']);
+			$advert->setObjects($data['country_ids']);
+
+            if (isset($data['id'])) {
+                if ($advert->heading_id != $data['heading_id']) {
+                    $this->_increaseTotal($data['country_ids'], $data['heading_id']);
+                    $this->_decreaseTotal($data['country_ids'], $advert->heading_id);
+                } else {
+                    $this->_increaseTotal($data['city_ids']);
+                }
+            } else {
+                $this->_increaseTotal($data['country_ids']);
+            }
 		}
 
 		if(isset($data['properties'])) { 
@@ -233,6 +266,7 @@ class AdvertsManager extends ModelsManager
 	public function getList($properties) {
 		$properties = array_merge([
 			'limit' => 0,
+			'total' => null,
 			'offset' => 0,
 			'maxLimit' => 0,
 			'paginate' => false,
@@ -417,7 +451,7 @@ class AdvertsManager extends ModelsManager
 		//  	$adverts->where('duplicate_in_all_cities', $properties['in_all_cities']);
 		// }
 
-		if(count($properties['cities']) > 0 || count($properties['regions']) > 0 || count($properties['countries']) > 0) {
+		if(count($properties['cities']) > 0) {
 			$adverts->where(function ($query) use ($properties) {
 				$query->where(function ($query) use ($properties) {
 					if(count($properties['cities']) > 0) {
@@ -431,13 +465,13 @@ class AdvertsManager extends ModelsManager
 
 						$query->whereExists(function ($query) use($properties) {
 							$query->select(\DB::raw(1))
-								->from('advert_city')
-								->whereRaw('`advert_city`.`advert_id` = `adverts`.`id`');
+								->from('advert_geo_object')
+								->whereRaw('`advert_geo_object`.`advert_id` = `adverts`.`id`');
 
 							if(count($properties['cities']) > 1) {
-								$query->whereRaw('`advert_city`.`city_id` in(' . implode(',', $properties['cities']) . ')');
+								$query->whereRaw('`advert_geo_object`.`geo_object_id` in (' . implode(',', $properties['cities']) . ')');
 							} else {
-								$query->whereRaw('`advert_city`.`city_id` = ' . $properties['cities'][0]);
+								$query->whereRaw('`advert_geo_object`.`geo_object_id` = ' . $properties['cities'][0]);
 							}
 						});
 					}
@@ -507,16 +541,26 @@ class AdvertsManager extends ModelsManager
 			->with('owner')
 			->with('medias')
 			->with('properties')
-			->with('cities')
-			->with('bills')
-			->with('bills.template');
+			->with('geoObjects')
+            ->with('template');
+//			->with('bills')
+//			->with('bills.template');
 
 		 // print_r( $adverts->getBindings() );
 		 // dd($adverts->toSql());
 
+
 		if($properties['paginate']) {
-			//$adverts = $this->_customPaginate($adverts, $properties['limit'], count($advertIds));
-			$adverts = $adverts->paginate($properties['limit']);
+
+//            if(count($properties['cities']) == 1) {
+//                if ($_total = $this->_getTotal($properties['cities'], $properties['headings'])) {
+//                    $properties['total'] = $_total;
+//                } else {
+//                    $properties['total'] = $this->_getTotal($properties['cities'], $properties['headings'], $adverts->count());
+//                }
+//            }
+
+			$adverts = $this->_customPaginate($adverts, $properties['limit'], $properties['total']);
 		} else {
 			if($properties['limit'] > 0) {
 				$adverts->take($properties['limit'])->skip($properties['offset']);
@@ -552,32 +596,89 @@ class AdvertsManager extends ModelsManager
 		return $adverts;
 	}
 
-	public function getListForCity($cityId) {
-		return Advert::leftJoin('advert_city', 'advert_city.advert_id', '=', 'adverts.id')
-			->where('city_id', $cityId)
-			->where('active', true)
-			->where('blocked', false)
-			->with(['heading','owner','medias','properties','cities','bills','bills.template'])
-			->orderByRaw(\DB::raw('-vip desc'))
-			->orderBy('accented', 'desc')
-			->orderBy('type', 'asc')
-			->orderBy('fakeupdated_at', 'desc')
-			->paginate(50);
+	public function getListForCity($geoObjectId) {
+        $geoObjectId = is_array($geoObjectId) ? $geoObjectId : [$geoObjectId];
+        $total = null;
+
+        $adverts = Advert::leftJoin('advert_geo_object', 'advert_geo_object.advert_id', '=', 'adverts.id')
+            ->where(function ($query) use ($geoObjectId) {
+                $query->where(function ($query) use ($geoObjectId) {
+                    $query->orWhereExists(function ($query) use($geoObjectId) {
+                        $query->select(\DB::raw(1))
+                            ->from('advert_geo_object')
+                            ->whereRaw('`advert_geo_object`.`advert_id` = `adverts`.`id`');
+
+                        if (!empty($geoObjectId))
+                            if(count($geoObjectId) > 1) {
+                                $query->whereRaw('`advert_geo_object`.`geo_object_id` in (' . implode(',', $geoObjectId) . ')');
+                            } else {
+                                $query->whereRaw('`advert_geo_object`.`geo_object_id` = ' . $geoObjectId[0]);
+                            }
+                    });
+                });
+            })
+            ->where('active', true)
+            ->withTrashed()
+            ->with(['heading','owner','medias','properties','geoObjects'])
+            ->with('heading.parent')
+            ->with('heading.aliases')
+            ->orderByRaw(\DB::raw('-vip desc'))
+            ->orderBy('accented', 'desc')
+            ->orderBy('type', 'asc')
+            ->orderBy('fakeupdated_at', 'desc');
+
+        if(count($geoObjectId) == 1) {
+            if ($_total = $this->_getTotal($geoObjectId[0])) {
+                $total = $_total;
+            } else {
+                $total = $this->_getTotal($geoObjectId[0], null, $adverts->count());
+            }
+        }
+
+        return $this->_customPaginate($adverts, 50, $total);
 	}
 
-	public function getListForCityByHeading($cityId, $headingId) {
-		return Advert::leftJoin('advert_city', 'advert_city.advert_id', '=', 'adverts.id')
-			->where('heading_id', $headingId)
-			->where('city_id', $cityId)
-			->where('active', true)
-			->where('blocked', false)
-			->with(['heading','owner','medias','properties','cities','bills','bills.template'])
-			->orderByRaw(\DB::raw('-vip desc'))
-			->orderBy('accented', 'desc')
-			->orderBy('type', 'asc')
-			->orderBy('fakeupdated_at', 'desc')
-			->paginate(50);
-	}
+    public function getListForCityByHeading($headingId, $geoObjectId) {
+        $geoObjectId = is_array($geoObjectId) ? $geoObjectId : [$geoObjectId];
+        $total = null;
+
+        $adverts = Advert::leftJoin('advert_geo_object', 'advert_geo_object.advert_id', '=', 'adverts.id')
+            ->where(function ($query) use ($geoObjectId) {
+                $query->where(function ($query) use ($geoObjectId) {
+                    $query->orWhereExists(function ($query) use($geoObjectId) {
+                        $query->select(\DB::raw(1))
+                            ->from('advert_geo_object')
+                            ->whereRaw('`advert_geo_object`.`advert_id` = `adverts`.`id`');
+
+                        if (!empty($geoObjectId))
+                            if(count($geoObjectId) > 1) {
+                                $query->whereRaw('`advert_geo_object`.`geo_object_id` in (' . implode(',', $geoObjectId) . ')');
+                            } else {
+                                $query->whereRaw('`advert_geo_object`.`geo_object_id` = ' . $geoObjectId[0]);
+                            }
+                    });
+                });
+            })
+            ->where('heading_id', $headingId)
+            ->where('active', true)
+            ->withTrashed()
+            ->with(['heading','owner','medias','properties','geoObjects', 'template'])
+             ->orderByRaw(\DB::raw('-vip desc'))
+             ->orderBy('accented', 'desc')
+             ->orderBy('type', 'asc')
+            ->orderBy('fakeupdated_at', 'desc');
+//            ->paginate(50);
+
+        if(count($geoObjectId) == 1) {
+            if ($_total = $this->_getTotal($geoObjectId[0], $headingId)) {
+                $total = $_total;
+            } else {
+                $total = $this->_getTotal($geoObjectId[0], $headingId, $adverts->count());
+            }
+        }
+
+        return $this->_customPaginate($adverts, 50, $total);
+    }
 
 	public function _customPaginate($builder, $perPage, $total = null, $columns = ['*'], $pageName = 'page', $page = null) {
 		$page = $page ?: Paginator::resolveCurrentPage($pageName);
@@ -594,6 +695,108 @@ class AdvertsManager extends ModelsManager
 	        ],
         ]);
 	}
+
+
+	public function _getTotal($geo_object_id, $heading_id = null, $total = null) {
+
+	    $results = \App\AdvertResult::where('geo_object_id', $geo_object_id);
+
+	    if ($heading_id) {
+	        $results = $results->where('heading_id' , $heading_id);
+        }
+
+        $results = $results->first();
+
+	    if (!$results) {
+            if ($total) {
+                $total = \App\AdvertResult::create([
+                    'geo_object_id' => $geo_object_id,
+                    'heading_id'    => $heading_id,
+                    'postcount'     => $total
+                ])->postcount;
+            }
+
+            return $total;
+        }
+
+        return $results->postcount;
+    }
+
+    public function _increaseTotal($gobject_id, $heading_id = null) {
+        if (is_array($gobject_id)) {
+            foreach ($gobject_id as $id) {
+
+                if ($heading_id) {
+                    $ar = \App\AdvertResult::where('geo_object_id', $id)->where('heading_id', $heading_id)->get();
+                } else {
+                    $ar = \App\AdvertResult::where('geo_object_id', $id)->get();
+                }
+
+                if (count($ar) > 0) {
+                    foreach ($ar as $a) {
+                        $a->update([
+                            'postcount' => \DB::raw('postcount + 1')
+                        ]);
+                    }
+                }
+
+            }
+        } else {
+
+            if ($heading_id) {
+                $ar = \App\AdvertResult::where('geo_object_id', $gobject_id)->where('heading_id', $heading_id)->get();
+            } else {
+                $ar = \App\AdvertResult::where('geo_object_id', $gobject_id)->get();
+            }
+
+            if (count($ar) > 0) {
+                foreach ($ar as $a) {
+                    $a->update([
+                        'postcount' => \DB::raw('postcount + 1')
+                    ]);
+                }
+            }
+        }
+    }
+
+    public function _decreaseTotal($gobject_id, $heading_id = null) {
+        if (is_array($gobject_id)) {
+            foreach ($gobject_id as $id) {
+
+                if ($heading_id) {
+                    $ar = \App\AdvertResult::where('geo_object_id', $id)->where('heading_id', $heading_id)->get();
+                } else {
+                    $ar = \App\AdvertResult::where('geo_object_id', $id)->get();
+                }
+
+                if (count($ar) > 0) {
+                    foreach ($ar as $a) {
+                        if ($a->postcount > 0)
+                            $a->update([
+                                'postcount' => \DB::raw('postcount - 1')
+                            ]);
+                    }
+                }
+
+            }
+        } else {
+
+            if ($heading_id) {
+                $ar = \App\AdvertResult::where('geo_object_id', $gobject_id)->where('heading_id', $heading_id)->get();
+            } else {
+                $ar = \App\AdvertResult::where('geo_object_id', $gobject_id)->get();
+            }
+
+            if (count($ar) > 0) {
+                foreach ($ar as $a) {
+                    if ($a->postcount > 0)
+                        $a->update([
+                            'postcount' => \DB::raw('postcount - 1')
+                        ]);
+                }
+            }
+        }
+    }
 
 	public function _customEmptyPaginate($perPage, $total = null, $columns = ['*'], $pageName = 'page', $page = null) {
 		$page = $page ?: Paginator::resolveCurrentPage($pageName);
@@ -620,28 +823,19 @@ class AdvertsManager extends ModelsManager
 		$path = [];
 		$advert = \App\Advert::find($id);
 
-
-
 		if(!$advert) {
 			return $path;
 		}
-
-
 
 		if($advert->heading->parent) {
 			$title = __($advert->heading->parent->name);
 			$url = $advert->heading->parent->getUrl();
 			$path[] = ['title' => $title, 'url' => $url];
 		}
-		
 
 		$title = __($advert->heading->name);
 		$url = $advert->heading->getUrl();
 		$path[] = ['title' => $title, 'url' => $url];
-
-		
-
-
 
 		if($advert->properties->count() > 0) {
 			$headingAliases = \App\HeadingAlias::where('heading_id', $advert->heading->id)->where('language', 'ru')->where(function ($q) use($advert) {

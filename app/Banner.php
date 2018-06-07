@@ -42,6 +42,10 @@ class Banner extends Model
         return $this->belongsTo('App\User');
     }
 
+    public function heading() {
+        return $this->belongsTo('App\Heading');
+    }
+
     public function image() {
         return $this->belongsTo('App\BannerImage');
     }
@@ -56,6 +60,10 @@ class Banner extends Model
 
     public function cities() {
         return $this->belongsToMany('App\City');
+    }
+
+    public function geoObjects() {
+        return $this->belongsToMany('App\GeoObject');
     }
 
     public function getUrl() {
@@ -97,21 +105,42 @@ class Banner extends Model
             ]; 
         }
 
-        foreach($this->placementToCountries($countries) as $country) {
+//        foreach($this->placementToCountries($countries) as $country) {
+//            $blankAreas[] = [
+//                'type' => 'country',
+//                'id' => $country,
+//            ];
+//        }
+//
+//        foreach($this->placementToRegions($regions) as $region) {
+//            $blankAreas[] = [
+//                'type' => 'region',
+//                'id' => $region,
+//            ];
+//        }
+//
+//        foreach($this->placementToCities($cities) as $city) {
+//            $blankAreas[] = [
+//                'type' => 'city',
+//                'id' => $city,
+//            ];
+//        }
+
+        foreach($this->placementToObject($countries) as $country) {
             $blankAreas[] = [
                 'type' => 'country',
                 'id' => $country,
             ];
         }
 
-        foreach($this->placementToRegions($regions) as $region) {
+        foreach($this->placementToObject($regions) as $region) {
             $blankAreas[] = [
                 'type' => 'region',
                 'id' => $region,
             ];
         }
 
-        foreach($this->placementToCities($cities) as $city) {
+        foreach($this->placementToObject($cities) as $city) {
             $blankAreas[] = [
                 'type' => 'city',
                 'id' => $city,
@@ -212,6 +241,33 @@ class Banner extends Model
         return $blank;
     }
 
+    public function placementToObject($objects) {
+        $filled = [];
+        $blank = [];
+
+        foreach($objects as $object) {
+            if(Banner::where('active', true)
+                    ->whereHas('geoObjects', function ($q) use ($object) {
+                        $q->where('id', $object);
+                    })
+                    ->where('heading_id', $this->heading_id)
+                    ->where('banner_number', $this->banner_number)
+                    ->where('block_number', $this->block_number)
+                    ->where('position', $this->position)
+                    ->where('id', '!=', $this->id)
+                    ->count() > 0) {
+
+                $blank[] = $object;
+            } else {
+                $filled[] = $object;
+            }
+        }
+
+        $this->geoObjects()->sync($filled);
+
+        return $blank;
+    }
+
     public function inCity($city_id) {
         return $this->cities->filter(function ($item) use($city_id) {
             return $item->id == $city_id;
@@ -228,5 +284,11 @@ class Banner extends Model
         return $this->countries->filter(function ($item) use($country_id) {
             return $item->id == $country_id;
         })->count() > 0;
+    }
+
+    public function inObject($obj_id) {
+        return $this->geoObjects->filter(function ($item) use ($obj_id) {
+                return $item->id == $obj_id;
+            })->count() > 0;
     }
 }

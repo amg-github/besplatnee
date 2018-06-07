@@ -35,13 +35,13 @@ class OfficeController extends Controller
 
     public function adverts(Request $request)
     {
-        $this->header('Мои сайты');
+        $this->header('Мои объявления');
 
         $this->breadcrumbs('Личный кабинет', route('office.dashboard'));
         $this->breadcrumbs('Мои объявления', route('office.adverts'));
         $this->version = 'c';
 
-        $adverts = \App\Advert::where('owner_id', \Auth::user()->id)->get();
+        $adverts = \App\Advert::where('owner_id', \Auth::user()->id)->where('active', 1)->orderBy('created_at', 'desc')->paginate(10);
 
         return view('office.adverts', [  
             'version' => $this->version,
@@ -58,8 +58,12 @@ class OfficeController extends Controller
         $this->breadcrumbs('Мои мега-объявления', route('office.adverts'));
         $this->version = 'c';
 
-        return view('office.dashboard', [  
+        $adverts = \App\Advert::where('owner_id', \Auth::user()->id)->where('type', 3)->where('active', 1)->paginate(10);
+
+        return view('office.adverts', [
             'version' => $this->version,
+            'adverts' => $adverts,
+            'city' => \Config::get('area'),
         ]);
     }
 

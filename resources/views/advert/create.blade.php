@@ -33,12 +33,12 @@
                             </div>
                             <div class="col-xs-8">
                                 <label>
-                                    <input id="advert_type" type="radio" name="advert_type" value="" checked>
+                                    <input id="advert_type" type="radio" name="advert_type" value="" {{ request()->has('mega') ? "" : "checked" }}>
                                     <span>Обычное объявление</span><br>
                                     <span class="advert-type-preview"><img src="/img/advert/default.png" alt=""></span>
                                 </label>
                                 <label>
-                                    <input id="advert_type" type="radio" name="advert_type" value="mega">
+                                    <input id="advert_type" type="radio" name="advert_type" value="mega" {{ request()->has('mega') ? "checked" : "" }}>
                                     <span>Мега-объявление</span>
                                     <span class="advert-type-preview"><img src="/img/advert/mega.png" alt=""></span>
 
@@ -55,7 +55,7 @@
                         </div>
                     </div>
 
-                    <div class="mega-advert" style="display: none;" >
+                    <div class="mega-advert" style="{{ request()->has('mega') ? "" : "display: none;" }}" >
 
                         @include('elements.forms.wrapper', [
                             'name' => 'mega_text_top',
@@ -266,15 +266,6 @@
                         'options' => Besplatnee::headings()->getTreeArray(),
                     ])
 
-                    @include('elements.forms.wrapper', [
-                        'name' => 'vip',
-                        'title' => 'VIP объявление',
-                        'input' => 'select',
-                        'help' => 'Выберите рубрику',
-                        'desc' => '',
-                        'id' => 'vip',
-                        'options' => [],
-                    ])
 
                     @include('elements.forms.wrapper', [
                         'name' => 'name',
@@ -312,7 +303,7 @@
                                 <input type="text" class="col-xs-9 input-numeric" placeholder="@lang('adverts.price.description')" name="price" value="{{ request()->input('price') }}" data-decimals="2" data-decsep="," data-thousanssep=" " data-min="0" data-decsep-secounds=".">
                                 <select class="col-xs-3" style="height: 26px;">
                                     @foreach(\Besplatnee::cities()->getCurrencies() as $currency)
-                                        <option value="{{ $currency->id }}" {{ config('area')->country->currency == $currency->id ? 'selected' : '' }}>{{ $currency->sign }} @lang($currency->name)</option>
+                                        <option value="{{ $currency->id }}" {{ config('area')->country()->getProps()['currency'] == $currency->id ? 'selected' : '' }}>{{ $currency->sign }} @lang($currency->name)</option>
                                     @endforeach
                                 </select>
                                 <div class="create-ad-desc"></div>

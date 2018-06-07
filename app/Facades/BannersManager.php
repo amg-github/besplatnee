@@ -185,11 +185,13 @@ class BannersManager extends ModelsManager {
 			$properties['limit'] = $properties['maxLimit'];
 		}
 
-		$banners = Banner::with('creator');
+		$banners = Banner::with('creator')
+            ->with('heading')
+            ->with('geoObjects');
 
-		$banners->whereHas('cities', function($q) {
-            $q->where('id', \Config::get('area')->id);
-        });
+//		$banners->whereHas('geoObjects', function($q) {
+//            $q->where('id', \Config::get('area')->id);
+//        });
 
 		if($properties['active'] !== null) {
 			$banners->where('active', $properties['active']);
@@ -228,66 +230,13 @@ class BannersManager extends ModelsManager {
 
 		switch($properties['return']) {
 			case 'model': break;
-			case 'array': 
+			case 'array':
 					$banners = $banners->toArray();
 				break;
 			default: break;
 		}
 
 		return $banners;
-	}
-
-	public function getBannerStrictGlobal($heading_id, $position, $banner_idx, $group_id = null) {
-		return Banner::where('active', true)
-			->where('position', $position)
-			->where(function ($query) use ($heading_id) {
-				$query->where('heading_id', $heading_id)
-					->orWhereNull('heading_id');
-			})
-			->where('dublicate_in_all_cities', true)
-			->where('banner_idx', $banner_idx)->find();
-	}
-
-
-	public function getBannerStrictForCountry($country_id, $heading_id, $position, $banner_idx, $group_id = null) {
-		return Banner::where('active', true)
-			->where('position', $position)
-			->where(function ($query) use ($heading_id) {
-				$query->where('heading_id', $heading_id)
-					->orWhereNull('heading_id');
-			})
-			->whereHas('countries', function ($query) use ($country_id) {
-				$query->where('id', $country_id);
-			})
-			->where('banner_idx', $banner_idx)->find();
-	}
-
-
-	public function getBannerStrictForRegion($region_id, $heading_id, $position, $banner_idx, $group_id = null) {
-		return Banner::where('active', true)
-			->where('position', $position)
-			->where(function ($query) use ($heading_id) {
-				$query->where('heading_id', $heading_id)
-					->orWhereNull('heading_id');
-			})
-			->whereHas('regions', function ($query) use ($region_id) {
-				$query->where('id', $region_id);
-			})
-			->where('banner_idx', $banner_idx)->find();
-	}
-
-
-	public function getBannerStrictForCity($city_id, $heading_id, $position, $banner_idx, $group_id = null) {
-		return Banner::where('active', true)
-			->where('position', $position)
-			->where(function ($query) use ($heading_id) {
-				$query->where('heading_id', $heading_id)
-					->orWhereNull('heading_id');
-			})
-			->whereHas('cities', function ($query) use ($city_id) {
-				$query->where('id', $city_id);
-			})
-			->where('banner_idx', $banner_idx)->find();
 	}
 
 	public function getBanners($position, $heading_id = null, $block_number = null) {
@@ -299,20 +248,16 @@ class BannersManager extends ModelsManager {
 			})
 			->where(function ($q) {
 				$q->where('duplicate_in_all_cities', true)
-					->orWhereHas('countries', function ($q) {
-						$q->where('id', config('area')->country_id);
-					})
-					->orWhereHas('regions', function ($q) {
-						$q->where('id', config('area')->region_id);
-					})
-					->orWhereHas('cities', function ($q) {
-						$q->where('id', config('area')->id);
-					});
+                    ->orWhereExists(function ($query) {
+                        $query->select(\DB::raw(1))
+                            ->from('banner_geo_object')
+                            ->where('geo_object_id', config('area')->id)
+                            ->whereRaw('`banner_geo_object`.`banner_id` = `banners`.`id`');
+                    });
 			})
 			->orderBy('banner_number')
-			->with('countries')
-			->with('regions')
-			->with('cities');
+            ->with('heading')
+			->with('geoObjects');
 
 		if($block_number === null) {
 			$banners->where(function ($q) {
@@ -337,25 +282,25 @@ class BannersManager extends ModelsManager {
 
 			if($banner->heading_id == $heading_id) {
 				// если баннер размещен в текущей категории и в текущем городе то размещаем
-				if($banner->inCity(config('area')->id)) {
+				if($banner->inObject(config('area')->id)) {
 					$result[$banner->banner_number] = $banner;
 					continue ;
 				}
 
-				$currentBannerInCity = $result[$banner->banner_number]->inCity(config('area')->id);
-				$currentBannerInRegion = $result[$banner->banner_number]->inRegion(config('area')->id);
+				$currentBannerInCity = $result[$banner->banner_number]->inObject(config('area')->id);
+				$currentBannerInRegion = $result[$banner->banner_number]->inObject(config('area')->id);
 
 				// если баннер размещен в текущей категории и в текущем регионе то размещаем
-				if($banner->inRegion(config('area')->region_id)) {
+				if($banner->inObject(config('area')->region_id)) {
 					if(!$currentBannerInCity) {
 						$result[$banner->banner_number] = $banner;
 						continue ;
 					}
 				}
 
-				$currentBannerInCountry = $result[$banner->banner_number]->inCountry(config('area')->id);
+				$currentBannerInCountry = $result[$banner->banner_number]->inObject(config('area')->id);
 
-				if($banner->inCountry(config('area')->country_id)) {
+				if($banner->inObject(config('area')->country_id)) {
 					if(!$currentBannerInCountry) {
 						$result[$banner->banner_number] = $banner;
 						continue ;
@@ -363,24 +308,24 @@ class BannersManager extends ModelsManager {
 				}
 			} else {
 				$currentBannerInHeading = $result[$banner->banner_number]->heading_id == $heading_id;
-				$currentBannerInCity = $result[$banner->banner_number]->inCity(config('area')->id);
+				$currentBannerInCity = $result[$banner->banner_number]->inObject(config('area')->id);
 				// если баннер размещен в текущей категории и в текущем городе то размещаем
-				if($banner->inCity(config('area')->id) && !($currentBannerInCity && $currentBannerInHeading)) {
+				if($banner->inObject(config('area')->id) && !($currentBannerInCity && $currentBannerInHeading)) {
 					$result[$banner->banner_number] = $banner;
 					continue ;
 				}
 
-				$currentBannerInRegion = $result[$banner->banner_number]->inRegion(config('area')->id);
+				$currentBannerInRegion = $result[$banner->banner_number]->inObject(config('area')->id);
 
 				// если баннер размещен в текущей категории и в текущем регионе то размещаем
-				if($banner->inRegion(config('area')->region_id) && !$currentBannerInCity && !($currentBannerInRegion && $currentBannerInHeading)) {
+				if($banner->inObject(config('area')->region_id) && !$currentBannerInCity && !($currentBannerInRegion && $currentBannerInHeading)) {
 					$result[$banner->banner_number] = $banner;
 					continue ;
 				}
 
-				$currentBannerInCountry = $result[$banner->banner_number]->inCountry(config('area')->id);
+				$currentBannerInCountry = $result[$banner->banner_number]->inObject(config('area')->id);
 
-				if($banner->inCountry(config('area')->country_id) && !$currentBannerInCity && !$currentBannerInRegion && !($currentBannerInCountry && $currentBannerInHeading)) {
+				if($banner->inObject(config('area')->country_id) && !$currentBannerInCity && !$currentBannerInRegion && !($currentBannerInCountry && $currentBannerInHeading)) {
 					$result[$banner->banner_number] = $banner;
 					continue ;
 				}

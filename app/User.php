@@ -61,16 +61,16 @@ class User extends Authenticatable
         return $this->belongsToMany('App\Group');
     }
 
-    public function cities() {
-        return $this->belongsToMany('App\City');
+    public function countries() {
+        return $this->belongsToMany('App\GeoObject')->where('type', 'country');
     }
 
     public function regions() {
-        return $this->belongsToMany('App\Region');
+        return $this->belongsToMany('App\GeoObject')->where('type', 'region');
     }
 
-    public function countries() {
-        return $this->belongsToMany('App\Country');
+    public function cities() {
+        return $this->belongsToMany('App\GeoObject')->where('type', 'city');
     }
 
     public function phone() {
@@ -177,31 +177,31 @@ class User extends Authenticatable
     }
 
     public function getAccessCountries($return_ids = false) {
-        if($this->inAllCities()) { return $return_ids ? \App\Country::pluck('id') : \App\Country::all(); }
+        if($this->inAllCities()) { return $return_ids ? \App\GeoObject::where('type', 'country')->pluck('id') : \App\GeoObject::where('type', 'country')->get(); }
 
-        $allowedCountriesForAllowedRegions = $this->regions->pluck('country_id');
-        $allowedCountriesForAllowedCities = $this->cities->pluck('country_id');
+        $allowedCountriesForAllowedRegions = $this->regions->pluck('parent_id');
+        $allowedCountriesForAllowedCities = $this->cities->regions->pluck('parent_id');
         $allowedCountries = $this->countries->pluck('id');
         $country_ids = $allowedCountries->merge($allowedCountriesForAllowedRegions)->merge($allowedCountriesForAllowedCities)->unique();
 
-        return $return_ids ? $country_ids : \App\Country::whereIn('id', $country_ids)->get();
+        return $return_ids ? $country_ids : \App\GeoObject::whereIn('id', $country_ids)->get();
     }
 
     public function getAccessRegions($country_id = null, $return_ids = false) {
         if($this->inAllCities()) {
             if($country_id) {
-                $query = \App\Region::where('country_id', $country_id);
+                $query = \App\GeoObject::where('parent_id', $country_id);
                 return $return_ids ? $query->pluck('id') : $query->get();
             } else {
-                return $return_ids ? \App\Region::pluck('id') : \App\Region::all();
+                return $return_ids ? \App\GeoObject::where('type', 'region')->pluck('id') : \App\GeoObject::where('type', 'region')->get();
             }
         } else {
-            $allowedRegionIdsByAllowedCities = $this->cities()->where('active', true)->distinct()->pluck('region_id');
+            $allowedRegionIdsByAllowedCities = $this->cities()->where('active', true)->distinct()->pluck('parent_id');
             $allowedRegionIds = $this->regions()->pluck('id')->merge($allowedRegionIdsByAllowedCities);
 
-            $query = \App\Region::whereIn('id', $allowedRegionIds);
+            $query = \App\GeoObject::whereIn('id', $allowedRegionIds);
             if($country_id) {
-                $query->where('country_id', $country_id);
+                $query->where('parent_id', $country_id);
             }
 
             return $return_ids ? $query->pluck('id') : $query->get();
@@ -209,14 +209,14 @@ class User extends Authenticatable
     }
 
     public function getAccessCities($region_id = null, $country_id = null, $return_ids = false) {
-        $query = \App\City::where('active', true);
+        $query = \App\GeoObject::where('active', true);
 
         if($region_id) {
-            $query->where('region_id', $region_id);
+            $query->where('parent_id', $region_id);
         }
 
         if($country_id) {
-            $query->where('country_id', $country_id);
+            $query->where('parent_id', $country_id);
         }
 
         if(!$this->inAllCities()) {
@@ -225,9 +225,7 @@ class User extends Authenticatable
             $allowedCountries = $this->countries->pluck('id');
 
             $query->where(function ($query) use ($allowedCities, $allowedRegions, $allowedCountries) {
-                $query->whereIn('id', $allowedCities)
-                    ->orWhereIn('region_id', $allowedRegions)
-                    ->orWhereIn('country_id', $allowedCountries);
+                $query->whereIn('id', $allowedCities);
             });
         }
 

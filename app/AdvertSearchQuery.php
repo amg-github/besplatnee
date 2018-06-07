@@ -33,11 +33,11 @@ class AdvertSearchQuery extends Model
     }
 
     public function getLink() {
-    	return '//'.(\Config::get('area') ? \Config::get('area')->aliases()->first()->nominative_international.'.' : '').env('APP_DOMAIN').'/поиск-'.$this->alias.'-в-городе-'.(\Config::get('area') ? \Config::get('area')->getName() : 'мире').'-poisk-'.str_replace('-', '_', app('slug')->make($this->alias)).'-v-gorode-'.app('slug')->make((\Config::get('area') ? \Config::get('area')->getName() : 'мире'));
+    	return '//'.(\Config::get('area') ? \Config::get('area')->alias.'.' : '').env('APP_DOMAIN').'/поиск-'.$this->alias.'-в-городе-'.(\Config::get('area') ? \Config::get('area')->name : 'мире').'-poisk-'.str_replace('-', '_', app('slug')->make($this->alias)).'-v-gorode-'.app('slug')->make((\Config::get('area') ? \Config::get('area')->name : 'мире'));
     }
 
     public function citiesNew() {
-        return $this->belongsToMany('App\City', 'advert_search_query_cities', 'advert_query_id');
+        return $this->belongsToMany('App\GeoObject', 'advert_search_query_cities', 'advert_query_id', 'city_id', 'id','id');
     }
 
     public function queryCity() {

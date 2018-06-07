@@ -49,4 +49,21 @@ class HomeController extends Controller
             'version'   => 'b',
         ]);
     }
+
+    public function geoobjects_update(Request $request) {
+        $cities = \App\AdvertSearchQueryCity::all();
+
+        foreach ($cities as $city) {
+            $g = \App\GeoObject::where('type', 'city')->where('oldid', $city->city_id)->first();
+            if ($g) {
+                $city->fill([
+                    'city_id'   =>  $g->id,
+                ]);
+
+                $city->save();
+            }
+        }
+
+
+    }
 }

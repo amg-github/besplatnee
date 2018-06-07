@@ -74,7 +74,7 @@ class BannerBillsController extends AdminController {
 						'content' => function ($banner) {
 							return $banner->dublicate_in_all_cities || !$banner->city
 								? __('banners.in_all_cities') 
-								: $banner->city->getName();
+								: $banner->city->name;
 						},
 					],
 				],

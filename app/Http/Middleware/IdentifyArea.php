@@ -48,9 +48,7 @@ class IdentifyArea
         // для работы в старом режиме
         if($alias == 'besplatnee') { $alias = 'moskva'; }
 
-        $city = \App\City::with(['country', 'region'])->where('active', true)->whereHas('aliases', function ($q) use ($alias) {
-            $q->where('nominative_international', $alias);
-        })->first();
+        $city = \App\GeoObject::where('active', 1)->where('alias', $alias)->first();
 
         if($city) {
             Config::set('area', $city);

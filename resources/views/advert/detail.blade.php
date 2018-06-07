@@ -142,7 +142,7 @@
 
                             <div class="col-xs-3">@lang('adverts.city')</div>
 
-                                <div class="col-xs-9 text-medium-blue"><a href="#">{{ config('area')->getName() }}</a></div>
+                                <div class="col-xs-9 text-medium-blue"><a href="#">{{ config('area')->name }}</a></div>
                                 
                         </div>
 
@@ -163,7 +163,7 @@
                                     @lang('site.phrases.city.short')&nbsp;{{ $advert->cities->first()->getName() }}
                                 @endif
                                 --}}
-                                в&nbsp;{{ config('area')->getInName() }}
+                                в&nbsp;{{ config('area')->genitive_name }}
 
                             </div>
 
@@ -226,6 +226,24 @@
                         </div>
 
                     </div>
+                    @if($advert->contacts)
+
+                    <div class="ad-post-desc clearfix">
+
+                        <div class="row">
+
+                            <div class="col-xs-3 text-small">Доп. контакты</div>
+
+                            <div class="col-xs-9">
+
+                                {!! $advert->contacts !!}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    @endif
 
                     <div class="ad-post-desc clearfix">
 

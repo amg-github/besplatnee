@@ -222,7 +222,7 @@ class AdvertController extends AdminController {
 						'widget' => 'relation',
 						'relation' => 'cities',
 						'view' => function ($city) {
-							return $city->getName();
+							return $city->name;
 						},
 						'separator' => ', ',
 					],
@@ -432,6 +432,8 @@ class AdvertController extends AdminController {
         if(!$advert) { abort(404); }
 
         if(\Gate::denies('remove', $advert)) { abort(403); }
+
+        $this->besplatnee->adverts()->_decreaseTotal($advert->geoObjects);
 
         $advert->delete();
 

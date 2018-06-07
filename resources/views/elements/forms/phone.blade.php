@@ -8,10 +8,10 @@
 	$callbackName = implode('_', $nameChunks);
 ?>
 <div class="col-xs-3" style="padding-left: 0; padding-right: 0; width: 75px">
-	<div class="dropdown-list" data-default="{{ \Config::get('area')->country->phone_code }}" data-name="prefix_{{ $callbackName}}" onchange="onChange_{{ $callbackName }}()">
-		@foreach(\App\Country::all() as $country)
-		<div class="dropdown-item" data-value="{{ $country->phone_code }}" data-image="{{ asset('img/countries/' . $country->flag_image) }}" {{ $country->id == \Config::get('area')->country->id ? 'data-checked' : '' }}>
-			{{ $country->phone_code }}
+	<div class="dropdown-list" data-default="{{ \Config::get('area')->country()->phone_code }}" data-name="prefix_{{ $callbackName}}" onchange="onChange_{{ $callbackName }}()">
+		@foreach(\App\GeoObject::countries()->get() as $country)
+		<div class="dropdown-item" data-value="{{ $country->getProps()['phone_code'] }}" data-image="{{ asset('img/countries/' . $country->getProps()['flag_image']) }}" {{ $country->id == \Config::get('area')->country()->id ? 'data-checked' : '' }}>
+			{{ $country->getProps()['phone_code'] }}
 		</div>
 		@endforeach
 	</div>

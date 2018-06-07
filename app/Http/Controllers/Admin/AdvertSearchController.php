@@ -95,7 +95,7 @@ class AdvertSearchController extends AdminController {
 						'widget' => 'relation',
 						'relation' => 'cities',
 						'view' => function ($city) {
-							return $city->getName();
+							return $city->name;
 						},
 						'separator' => ',&nbsp;',
 					],

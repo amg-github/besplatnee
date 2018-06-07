@@ -13,5 +13,7 @@
 	    @empty
 	        <p><center>У вас нет объявлений</center></p>
 	    @endforelse
+
+		{{ $adverts->links('elements.pagination') }}
 	</div>
 @endsection

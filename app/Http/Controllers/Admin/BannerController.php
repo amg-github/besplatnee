@@ -224,13 +224,13 @@ class BannerController extends AdminController {
 							$this->complete_messages['warning'][] = 'Не удалось разместить баннер на весь мир. Место занято.';
 						break;
 					case 'country':
-							$this->complete_messages['warning'][] = 'Не удалось разместить баннер в ' . \App\Country::find($area['id'])->getName() . '. Место занято.';
+							$this->complete_messages['warning'][] = 'Не удалось разместить баннер в ' . \App\GeoObject::find($area['id'])->name . '. Место занято.';
 						break;
 					case 'region':
-							$this->complete_messages['warning'][] = 'Не удалось разместить баннер в ' . \App\Region::find($area['id'])->getName() . '. Место занято.';
+							$this->complete_messages['warning'][] = 'Не удалось разместить баннер в ' . \App\GeoObject::find($area['id'])->name . '. Место занято.';
 						break;
 					case 'city':
-							$this->complete_messages['warning'][] = 'Не удалось разместить баннер в ' . \App\City::find($area['id'])->getName() . '. Место занято.';
+							$this->complete_messages['warning'][] = 'Не удалось разместить баннер в ' . \App\GeoObject::find($area['id'])->name . '. Место занято.';
 						break;
 				}
 			}

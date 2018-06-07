@@ -213,8 +213,39 @@ class GeoObjectsController extends AdminController {
 
 		if(!$gobject) { abort(404); }
 
-		$validator = Validator::make($request->all(), [
-			'name'					=> 'required',
+        $data = $request->all();
+
+        if (!$data['alias'] && $data['name']) {
+            $data['alias'] = app('slug')->make(\Str::ucfirst($data['name']));
+        }
+
+        if (!$data['genitive_alias'] && $data['genitive_name']) {
+            $data['genitive_alias'] = app('slug')->make(\Str::ucfirst($data['genitive_name']));
+        }
+
+        if (!$data['accusative_alias'] && $data['accusative_name']) {
+            $data['accusative_alias'] = app('slug')->make(\Str::ucfirst($data['accusative_name']));
+        }
+
+        if (!$data['dative_alias'] && $data['dative_name']) {
+            $data['dative_alias'] = app('slug')->make(\Str::ucfirst($data['dative_name']));
+        }
+
+        if (!$data['ergative_alias'] && $data['ergative_name']) {
+            $data['ergative_alias'] = app('slug')->make(\Str::ucfirst($data['ergative_name']));
+        }
+
+		$validator = Validator::make($data, [
+            'name'					=> 'required',
+            'genitive_name'			=> 'required',
+            'accusative_name'		=> 'required',
+            'dative_name'			=> 'required',
+            'ergative_name'			=> 'required',
+            'alias'			        => 'required',
+            'genitive_alias'		=> 'required',
+            'accusative_alias'		=> 'required',
+            'dative_alias'			=> 'required',
+            'ergative_alias'		=> 'required',
 			'parent_id.*' 			=> 'nullable|not_in:'.$gobject->id.'|exists:geo_objects,id',
 		]);
 
@@ -225,7 +256,7 @@ class GeoObjectsController extends AdminController {
             return $isNew ? $this->create($request, $model) : $this->edit($request, $model, $id);
 		}
 
-		$gobject->fill($request->all());
+		$gobject->fill($data);
 
 		$parent = '';
 		$fullname = $request->name;
@@ -265,6 +296,9 @@ class GeoObjectsController extends AdminController {
 			'fullname'	=> $fullname,
 			'type'		=> $type,
 		]);
+
+
+
 		$gobject->save();
 
 		if($isNew) {

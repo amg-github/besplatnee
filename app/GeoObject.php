@@ -31,9 +31,7 @@ class GeoObject extends Model {
 		'updated_at',
 	];
 
-	protected $hidden = [
-
-	];
+	protected $hidden = [];
 
 	protected $cast = [
 		'active' => 'boolean',
@@ -106,8 +104,51 @@ class GeoObject extends Model {
     	return $this->type == 'city';
     }
 
+    public function region() {
+        switch ($this->type) {
+            case 'country':
+                return $this->hasMany('App\GeoObject', 'parent_id')->get();
+                break;
+            case 'city':
+                return $this->hasOne('App\GeoObject', 'id', 'parent_id')->first();
+                break;
+            default:
+                return $this;
+                break;
+        }
+    }
+
+    public function country() {
+        switch ($this->type) {
+            case 'city':
+                return $this->region()->country();
+                break;
+            case 'region':
+                return $this->hasOne('App\GeoObject', 'id', 'parent_id')->first();
+                break;
+            default:
+                return $this;
+                break;
+        }
+    }
+
+    public function city() {
+        switch ($this->type) {
+            case 'country':
+                $ids = $this->region()->pluck('id')->toArray();
+                return self::cities()->whereIn('parent_id', $ids)->get();
+                break;
+            case 'region':
+                return $this->hasMany('App\GeoObject', 'parent_id')->get();
+                break;
+            default:
+                return $this;
+                break;
+        }
+    }
+
     public static function countries() {
-    	return GeoObject::where('type', 'country');
+    	return GeoObject::where('type', 'country')->where('active', 1);
     }
 
     public static function regions() {
@@ -117,4 +158,71 @@ class GeoObject extends Model {
     public static function cities() {
     	return GeoObject::where('type', 'city');
     }
+
+    public function getProps() {
+        return json_decode($this->properties, true);
+    }
+
+    public function getPropsTemplate($type) {
+        switch ($type) {
+            case 'country':
+                $props = [
+                    'phone_code'    => '',
+                    'flag_image'    => '',
+                    'capital'       => '',
+                    'country_code'  => '',
+                    'currency'      => '',
+                ];
+
+                break;
+
+            case 'city':
+                $props = [
+                    'contact_email' => '',
+                    'contact_phone' => '',
+                    'time_zone'     => '',
+                ];
+
+                break;
+
+            default:
+                $props = null;
+        }
+
+        return $props;
+    }
+
+    public function setProps($new_props = []) {
+        //создается коллекция новых значений
+        $new_props = collect($new_props);
+
+        //запрашивается шаблон параметров
+        $template = $this->getPropsTemplate($this->type);
+
+        //отсеиваются лишние поля в новых параметров по шаблону
+        $new_props = $new_props->intersectByKeys($template);
+
+        if ($this->properties) {
+
+            //получение уже существующих параметров
+            $props = $this->getProps();
+
+            //отсеивание лишних полей новых параметров от уже существующих
+            $new_props = $new_props->intersectByKeys($props);
+
+            //отсеивание лишних полей уже существующих параметров от шаблонных
+            $props = collect($props)->intersectByKeys($template)->toArray();
+
+            //мержим старые данные и новые
+            $new_props = array_merge($new_props->toArray(), $props);
+        } else {
+            $new_props = $new_props->toArray();
+        }
+        //мержим шаблонные и новые значения
+        $props = json_encode(array_merge($template, $new_props));
+
+        $this->update(['properties' => $props]);
+
+    }
+
 }

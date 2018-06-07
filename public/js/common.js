@@ -33,7 +33,7 @@ $(function () {
 
             var domain = location.href;
 
-            if (domain.indexOf('http://besplatnee.net') > -1) {
+            if (domain.indexOf('http://besplatnee.net') > -1) {ј
                 var geolocation = ymaps.geolocation;
                 var coords = [];
 
@@ -44,7 +44,7 @@ $(function () {
                     coords = result.geoObjects.position;
 
                     SITE.location.checkCurrentLocation(coords[0], coords[1], function(res) {
-                        showLocationModal(res.data[0].nominative_local, res.data[0].nominative_international, res.data[0].country_id);
+                        showLocationModal(res.data[0].name, res.data[0].name, res.data[0].id);
                     });
 
                 });
@@ -54,9 +54,9 @@ $(function () {
                     mapStateAutoApply: true
                 }).then(function (result) {
                     coords = result.geoObjects.position;
-                    
+
                     SITE.location.checkCurrentLocation(coords[0], coords[1], function(res) {
-                        showLocationModal(res.data[0].nominative_local, res.data[0].nominative_international, res.data[0].country_id);
+                        showLocationModal(res.data[0].name, res.data[0].name, res.data[0].id);
                     });
                 });
             }
@@ -337,7 +337,7 @@ $(function () {
                 if(res.success) {
                     $('.country-cities').html('');
                     $.each(res.data, function () {
-                        $('.country-cities').append('<div class="col-xs-3"><a class="country-city" href="http://' + this.nominative_international + '.' + location.hostname.split('.').slice(-2).join('.') + '/">' + this.nominative_local + '</a></div>');
+                        $('.country-cities').append('<div class="col-xs-3"><a class="country-city" href="http://' + this.alias + '.' + location.hostname.split('.').slice(-2).join('.') + '/">' + this.name + '</a></div>');
                     });
                 }
             });

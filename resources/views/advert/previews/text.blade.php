@@ -1,4 +1,4 @@
-<div class="post-item-wrapper" id="advert-{{ $advert->id }}">
+<div class="post-item-wrapper" id="advert-{{ $advert->id }}" data-id="{{ $advert->id }}">
     @if($advert->isArchive())
         <div class="archive-status">в архиве</div>
     @endif
@@ -43,7 +43,13 @@
 
 
                             <div class="post-item-desc-wrapper block-right">
-                                <div class="post-item-subtitle">г. {{ config('area')->getName() }}</div>
+                                <div class="post-item-subtitle">
+                                    @if(isset($advert->geoObjects[0]))
+                                        г. {{ $advert->geoObjects[0]->name }}
+                                    @else
+                                        г. {{ config('area')->name }}
+                                    @endif
+                                </div>
                             </div>
                         
 
@@ -53,9 +59,12 @@
                         <div class="post-item-desc-wrapper {{ $advert->getVideos()->count() > 0 ? 'post-has-video' : '' }}">
                             <div class="post-item-desc">
                                 <a target="__blank" href="{{ $advert->getUrl() }}" title="Подробнее">
-                                    {!! str_limit($advert->content, 300, '...') !!} 
-                                    
-                                        г. {{ config('area')->getName() }}
+                                    {!! str_limit($advert->content, 300, '...') !!}
+                                        @if(isset($advert->geoObjects[0]))
+                                            г. {{ $advert->geoObjects[0]->name }}
+                                        @else
+                                            г. {{ config('area')->name }}
+                                        @endif
                                     
                                 </a>
                             </div>
@@ -67,6 +76,13 @@
                             @endif
                         </div>
                         <div class="clearfix"></div>
+                        @if($advert->contacts)
+                            <div class="post-item-desc-wrapper">
+                                <div class="post-item-tags" style="color: #9c9c9c; font-size: 12px">
+                                    Доп. контакты: {{$advert->contacts}}
+                                </div>
+                            </div><br>
+                        @endif
                         <div class="post-item-desc-wrapper">
                             <div class="post-item-tags">
                                 @foreach($advert->getHeadingPath() as $heading)

@@ -21,9 +21,13 @@
     <fieldset class="row">
         <label class="col-xs-offset-5 col-xs-4">
             <input type="checkbox" name="cities[]" value="{{ \Config::get('area')->id }}" checked>
-            Только в {{ \Config::get('area')->getInName() }}
+            Только в {{ \Config::get('area')->dative_name }}
         </label>
     </fieldset>
+
+    @include('elements.forms.areapicker', [
+
+        ])
 
     <fieldset class="row">
         <label class="col-xs-offset-5 col-xs-4">

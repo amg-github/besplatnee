@@ -39,7 +39,13 @@
 	} else {
 		$config['countries'] = \App\Country::pluck('id');
 	}
-	//dd(request()->all());
+
+	if (request()->id) {
+        $objects = \App\Advert::find(request()->id)->geoObjects->pluck('id')->toArray();
+    } else {
+	    $objects = [];
+	}
+
 ?>
 <div class="create-ad-row">
 	<div class="row">
@@ -56,28 +62,28 @@
 
 			@if($config['controlls']['current']['country'])
 			<label class="col-xs-3 checkbox-label">
-    			<input type="checkbox" name="{{ point_to_bracket($config['names']['countries']) }}" value="{{ config('area')->country_id }}" {{ in_array(config('area')->country_id, request()->input($config['names']['countries'], [])) ? 'checked' : '' }}>@lang($config['titles']['country'], ['country' => config('area')->country->getInName()])
+    			<input type="checkbox" name="{{ point_to_bracket($config['names']['countries']) }}" value="{{ config('area')->country()->id }}" {{ in_array(config('area')->country()->id, $objects) ? 'checked' : '' }}>@lang($config['titles']['country'], ['country' => config('area')->country()->genitive_name])
 			</label>
 			@endif
 
 			@if($config['controlls']['current']['region'])
 			<label class="col-xs-3 checkbox-label">
-    			<input type="checkbox" name="{{ point_to_bracket($config['names']['regions']) }}" value="{{ config('area')->region_id }}" {{ in_array(config('area')->region_id, request()->input($config['names']['regions'], [])) ? 'checked' : '' }}>@lang($config['titles']['region'], ['region' => config('area')->region->getInName()])
+    			<input type="checkbox" name="{{ point_to_bracket($config['names']['regions']) }}" value="{{ config('area')->region()->id }}" {{ in_array(config('area')->region()->id, $objects) ? 'checked' : '' }}>@lang($config['titles']['region'], ['region' => config('area')->region()->genitive_name])
 			</label>
 			@endif
 
 			@if($config['controlls']['current']['city'])
 			<label class="col-xs-3 checkbox-label">
-    			<input type="checkbox" name="{{ point_to_bracket($config['names']['cities']) }}" value="{{ config('area')->id }}" {{ in_array(config('area')->id, request()->input($config['names']['cities'], [])) ? 'checked' : '' }}>@lang($config['titles']['city'], ['city' => config('area')->getInName()])
+    			<input type="checkbox" name="{{ point_to_bracket($config['names']['cities']) }}" value="{{ config('area')->id }}" {{ in_array(config('area')->id, $objects) ? 'checked' : '' }}>@lang($config['titles']['city'], ['city' => config('area')->genitive_name])
 			</label>
 			@endif
 
 			@foreach(request()->input($config['names']['countries'], []) as $country_id)
 				@if($country_id != config('area')->country_id || $country_id == config('area')->country_id && !$config['controlls']['current']['country'])
-					@if($country = \App\Country::find($country_id))
+					@if($country = \App\GeoObjec::countries()->where('id',$country_id)->first())
 						<label class="col-xs-3 checkbox-label">
 			    			<input type="checkbox" name="{{ point_to_bracket($config['names']['countries']) }}" value="{{ $country_id }}" checked>
-			    			{{ $country->getName() }}
+			    			{{ $country->name }}
 						</label>
 					@endif
 				@endif
@@ -85,10 +91,10 @@
 
 			@foreach(request()->input($config['names']['regions'], []) as $region_id)
 				@if($region_id != config('area')->region_id || $region_id == config('area')->region_id && !$config['controlls']['current']['region'])
-					@if($region = \App\Region::find($region_id))
+					@if($region = \App\GeoObject::regions()->where('id',$region_id)->first())
 						<label class="col-xs-3 checkbox-label">
 			    			<input type="checkbox" name="{{ point_to_bracket($config['names']['regions']) }}" value="{{ $region_id }}" checked>
-			    			{{ $region->country->getName() }}, {{ $region->getName() }}
+			    			{{ $region->country()->name }}, {{ $region->name }}
 						</label>
 					@endif
 				@endif
@@ -96,10 +102,11 @@
 
 			@foreach(request()->input($config['names']['cities'], []) as $city_id)
 				@if($city_id != config('area')->id || $city_id == config('area')->id && !$config['controlls']['current']['city'])
-					@if($city = \App\City::find($city_id))
-						<label class="col-xs-3 checkbox-label">
+					@if($city = \App\GeoObject::cities()->where('id', $city_id)->first())
+
+							<label class="col-xs-3 checkbox-label">
 			    			<input type="checkbox" name="{{ point_to_bracket($config['names']['cities']) }}" value="{{ $city_id }}" checked>
-			    			{{ $city->country->getName() }}, {{ $city->region->getName() }}, {{ $city->getName() }}
+			    			{{ $city->country()->name }}, {{ $city->region()->name }}, {{ $city->name }}
 						</label>
 					@endif
 				@endif
@@ -110,8 +117,8 @@
             <label>Добавить город:</label><br>
             <select id="advert-city-add-country">
                 <option value="" checked>Страна</option>
-            	@foreach(\App\Country::whereIn('id', $config['countries'])->get() as $country) 
-                <option value="{{ $country->id }}">{{ $country->getName() }}</option>
+            	@foreach(\App\GeoObject::countries()->whereIn('oldid', $config['countries'])->get() as $country)
+                <option value="{{ $country->id }}">{{ $country->name }}</option>
             	@endforeach
             </select>
 
@@ -136,7 +143,7 @@
                             $('#advert-city-add-region option.region-item').remove();
                             $.each(r.data, function () {
                             	if(!allowedRegions.length || allowedRegions.indexOf(this.id) >= 0) {
-                                	$('#advert-city-add-region').append('<option class="region-item" value="' + this.id + '">' + this.nominative_local + '</option>');
+                                	$('#advert-city-add-region').append('<option class="region-item" value="' + this.id + '">' + this.name + '</option>');
                                 }
                             });
                         }
@@ -151,7 +158,7 @@
                             $('#advert-city-add-city option.city-item').remove();
                             $.each(r.data, function () {
                             	if(!allowedCities.length || allowedCities.indexOf(this.id) >= 0) {
-                                	$('#advert-city-add-city').append('<option class="city-item" value="' + this.id + '">' + this.nominative_local + '</option>');
+                                	$('#advert-city-add-city').append('<option class="city-item" value="' + this.id + '">' + this.name + '</option>');
                                 }
                             });
                         }

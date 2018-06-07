@@ -155,8 +155,12 @@ $(function () {
 	            remove: function (id) {
 	                SITE.modal.checkSolution('Удалить из газеты?', function () {
 	                    SITE.adverts.action(id, 'remove', function () {
-	                        SITE.modal.notifycation('Заявка на удаление объявления успешно составлена');
+	                        SITE.modal.notifycation('Объявление удалено');
 	                    });
+
+                        $('.post-item-wrapper[data-id="' + id + '"]').fadeOut(300, function () {
+                            $('.post-item-wrapper[data-id="' + id + '"]').remove();
+                        });
 	                });
 	            },
 	            commenting: function (id) {

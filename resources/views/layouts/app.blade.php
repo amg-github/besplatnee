@@ -63,7 +63,7 @@
                     <div class="logotype-company">
                         <div class="sub-category-title">@lang('site.adverts.main-title')</div>
                         <a href="@section('top.logo.url', route('home'))"><img src="img/logo.png" alt="Besplatnee.net"></a>
-                        <div class="logotype-company-city">@yield('top.address', config('area')->getName())</div>
+                        <div class="logotype-company-city">@yield('top.address', config('area')->name)</div>
                         <div class="logotype-company-phone">(929)-717-58-58</div>
                     </div>
 
@@ -157,12 +157,12 @@
                                     <label for="options-country">
                                         <select id="options-country" name="search_area_id">
                                             <option value="world">@lang('site.search.all-world')</option>
-                                            <option value="country">@lang('site.search.all-country', ['country' => \Config::get('area')->country->getForName()])</option>
-                                            <option value="region">@lang('site.search.all-region', ['region' => \Config::get('area')->region->getForName()])</option>
-                                            @foreach(Besplatnee::cities()->getByRegionId(\Config::get('area')->region->id) as $city)
+                                            <option value="country">@lang('site.search.all-country', ['country' => \Config::get('area')->country()->dative_name])</option>
+                                            <option value="region">@lang('site.search.all-region', ['region' => \Config::get('area')->region()->dative_name])</option>
+                                            @foreach(Besplatnee::cities()->getByRegionId(\Config::get('area')->region()->id) as $city)
                                                 <option value="{{ $city->id }}" 
                                                     {{ request()->route()->controller->getCityOfSearch() == $city->id ? ' selected' : ''}}
-                                                >{{ $city->getName() }}</option>
+                                                >{{ $city->name }}</option>
                                             @endforeach
                                         </select>
                                     </label>
@@ -274,9 +274,9 @@
                             <div class="row">
                                 <div class="footer-company-desc">
                                     @lang('site.description.bottom', [
-                                        'city' => \Config::get('area')->getName(),
-                                        'for_city' => \Config::get('area')->getForName(),
-                                        'in_city' =>  \Config::get('area')->getInName(),
+                                        'city' => \Config::get('area')->name,
+                                        'for_city' => \Config::get('area')->dative_name,
+                                        'in_city' =>  \Config::get('area')->genitive_name,
                                     ])
                                 </div>
                             </div>
@@ -291,7 +291,7 @@
                     <div class="text-center">
                         <div class="copyright">
                             @lang('site.description.copyright', [
-                                'city' => \Config::get('area')->getName(),
+                                'city' => \Config::get('area')->name,
                                 'year' =>  date('Y'),
                             ])
                         </div>

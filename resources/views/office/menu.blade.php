@@ -27,7 +27,7 @@
         <div class="parameters-list-wrapper">
             <ul>
                 <li><a href="{{ route('office.mega') }}">@lang('auth.adverts.mega.my')</a></li>
-                <li><a href="#">@lang('adverts.mega.add')</a></li>
+                <li><a href="{{ route('advert-create', ['mega']) }}">@lang('adverts.mega.add')</a></li>
             </ul>
         </div>
     </div>

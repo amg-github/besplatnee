@@ -24,6 +24,9 @@ class AjaxController extends Controller
     }
 
     public function advert_remove(Request $request) {
+        $advert = \App\Advert::where('id', $request->input('id'))->first();
+
+        $advert->update(['active' => 0]);
 
         return $this->success();
     }
@@ -128,13 +131,14 @@ class AjaxController extends Controller
         $city       = $request->city ? $request->city : \Config::get('area')->id;
 
         $data   =   \DB::table('adverts')
-            ->leftJoin('advert_city', 'adverts.id', '=', 'advert_city.advert_id')
+            ->leftJoin('advert_geo_object', 'adverts.id', '=', 'advert_geo_object.advert_id')
             ->where('adverts.active', 1)
             ->whereNull('adverts.deleted_at')
             ->where('adverts.heading_id', $heading)
-            ->where('advert_city.city_id', $city)
+            ->where('advert_geo_object.geo_object_id', $city)
             ->whereNotNull('adverts.vip')
             ->pluck('adverts.vip');
+
 
         return $this->success($data->toArray());
     }
@@ -143,31 +147,13 @@ class AjaxController extends Controller
         $long   =   $request->long;
         $lat    =   $request->lat;
 
-        $range 	=	10;
-
-        $range_long = $long + $range;
-        $range_lat 	= $lat + $range;
-
-        $data   =   \DB::table('cities')
-            ->leftJoin('area_names', 'cities.name_key', '=', 'area_names.key')
-            ->where('cities.northeast_latitude', '>=', $lat)
-            ->where('cities.northeast_longitude', '>=', $long)
-            ->where('cities.southwest_latitude', '<=', $lat)
-            ->where('cities.southwest_longitude', '<=', $long)
-            ->select('cities.id', 'area_names.nominative_local', 'area_names.nominative_international', 'cities.northeast_latitude',
-        				'cities.northeast_longitude', 'cities.southwest_latitude', 'cities.southwest_longitude', 'cities.country_id')
-            ->distinct()
+        $data   =   \App\GeoObject::where('northeast_latitude', '>=', $lat)
+            ->where('northeast_longitude', '>=', $long)
+            ->where('southwest_latitude', '<=', $lat)
+            ->where('southwest_longitude', '<=', $long)
             ->get();
 
-        // foreach ($data as &$region) {
-        // 	if ($region->northeast_latitude < $range_lat &&
-        // 		$region->northeast_longitude < $range_long &&
-        // 		$region->southwest_latitude > $range_lat &&
-        // 		$region->southwest_longitude > $range_long)
-        // 	{
-        // 		$region->city = '123';
-        // 	}
-        // } 
+        dd($data);
 
         return $this->success($data->toArray());
     }
@@ -176,14 +162,11 @@ class AjaxController extends Controller
         $country_id = $request->input('id', 0);
         $firstletter = $request->input('firstletter', 'А');
 
-        $data = \DB::table('cities')
-            ->leftJoin('area_names', 'cities.name_key', '=', 'area_names.key')
-            ->where('cities.active', 1)
-            ->where('cities.country_id', $country_id)
-            ->where('area_names.nominative_local', 'like', $firstletter . '%')
-            ->select('cities.id', 'area_names.nominative_local', 'area_names.nominative_international')
-            ->orderBy('area_names.nominative_local')
-            ->distinct()
+        $data = \App\GeoObject::whereHas('parent', function($query) use ($country_id){
+            $query->where('parent_id', $country_id);
+        })
+            ->having('name', 'like', $firstletter.'%')
+            ->orderBy('name')
             ->get();
 
         return $this->success($data->toArray());
@@ -195,35 +178,23 @@ class AjaxController extends Controller
         $country_id = $request->input('id', 0);
         $lang = $request->input('lang', 'ru');
 
-        if(!Cache::has('countries.firstletters.' . $country_id . '_' . $lang)) {
-            $data = \DB::table('cities')
-                ->leftJoin('area_names', 'cities.name_key', '=', 'area_names.key')
-                ->where('cities.active', 1)
-                ->where('cities.country_id', $country_id)
-                ->where('area_names.language', $lang)
-                ->select(\DB::raw('LEFT(area_names.nominative_local, 1) as firstletter'))
+            $data = \App\GeoObject::whereHas('parent', function($query) use ($country_id){
+                $query->where('parent_id', $country_id);
+            })
+                ->select(\DB::raw('LEFT(name, 1) as firstletter'))
+                ->groupBy('firstletter')
                 ->orderBy('firstletter')
-                ->distinct()
                 ->get();
 
-            Cache::forever('countries.firstletters.' . $country_id . '_' . $lang, $data->toArray());
-        }
 
-        return $this->success(Cache::get('countries.firstletters.' . $country_id . '_' . $lang));
+        return $this->success($data->toArray());
     }
 
     public function country_getregions(Request $request) {
         $country_id = $request->input('id', 0);
         $lang = $request->input('lang', 'ru');
 
-        $data = \DB::table('regions')
-            ->leftJoin('area_names', 'regions.name_key', '=', 'area_names.key')
-            ->where('regions.country_id', $country_id)
-            ->where('area_names.language', $lang)
-            ->select('regions.id', 'area_names.nominative_local', 'area_names.nominative_international')
-            ->orderBy('area_names.nominative_local')
-            ->distinct()
-            ->get();
+        $data = \App\GeoObject::where('parent_id', $country_id)->get();
 
         return $this->success($data->toArray());
     }
@@ -232,14 +203,7 @@ class AjaxController extends Controller
         $region_id = $request->input('id', 0);
         $lang = $request->input('lang', 'ru');
 
-        $data = \DB::table('cities')
-            ->leftJoin('area_names', 'cities.name_key', '=', 'area_names.key')
-            ->where('cities.region_id', $region_id)
-            ->where('area_names.language', $lang)
-            ->select('cities.id', 'area_names.nominative_local', 'area_names.nominative_international')
-            ->orderBy('area_names.nominative_local')
-            ->distinct()
-            ->get();
+        $data = \App\GeoObject::where('parent_id', $region_id)->get();
 
         return $this->success($data->toArray());
     }
@@ -279,7 +243,7 @@ class AjaxController extends Controller
 
         $data = [];
         foreach(\Auth::user()->getAccessRegions($country_id) as $region) {
-            $data[] = ['id' => $region->id, 'nominative_local' => $region->getName()];
+            $data[] = ['id' => $region->id, 'name' => $region->name];
         }
 
         return $this->success($data);
@@ -290,7 +254,7 @@ class AjaxController extends Controller
         
         $data = [];
         foreach(\Auth::user()->getAccessCities($region_id) as $city) {
-            $data[] = ['id' => $city->id, 'nominative_local' => $city->getName()];
+            $data[] = ['id' => $city->id, 'name' => $city->name];
         }
 
         return $this->success($data);

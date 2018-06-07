@@ -8,7 +8,7 @@
 	        <option value="duplicate" style="background: #eee" {{ request()->input('country_id') == 'duplicate' ? 'selected' : '' }}>Через весь мир</option>
 	        @endif
 	    	@foreach($config['countries'] as $country) 
-	        <option value="{{ $country->id }}" {{ request()->input('country_id') == $country->id ? 'selected' : '' }}>{{ $country->getName() }}</option>
+	        <option value="{{ $country->id }}" {{ request()->input('country_id') == $country->id ? 'selected' : '' }}>{{ $country->name }}</option>
 	    	@endforeach
 	    </select>
 	</div>
@@ -23,7 +23,7 @@
 	        <option class="strict_value" value="duplicate" style="{!! $config['regions']->count() > 0 ? '' : 'display: none;' !!}background: #eee" {{ request()->input('region_id') == 'duplicate' ? 'selected' : '' }}>Через всю страну</option>
 	        @endif
 	    	@foreach($config['regions'] as $region) 
-	        <option class="region-item" value="{{ $region->id }}" {{ request()->input('region_id') == $region->id ? 'selected' : '' }}>{{ $region->getName() }}</option>
+	        <option class="region-item" value="{{ $region->id }}" {{ request()->input('region_id') == $region->id ? 'selected' : '' }}>{{ $region->name }}</option>
 	    	@endforeach
 	    </select>
 	</div>
@@ -38,7 +38,7 @@
 	        <option class="strict_value" value="duplicate" style="{!! $config['cities']->count() > 0 ? '' : 'display: none;' !!}background: #eee" {{ request()->input('city_id') == 'duplicate' ? 'selected' : '' }}>Через весь регион</option>
 	        @endif
 	    	@foreach($config['cities'] as $city) 
-	        <option class="city-item" value="{{ $city->id }}" {{ request()->input('city_id') == $city->id ? 'selected' : '' }}>{{ $city->getName() }}</option>
+	        <option class="city-item" value="{{ $city->id }}" {{ request()->input('city_id') == $city->id ? 'selected' : '' }}>{{ $city->name }}</option>
 	    	@endforeach
 	    </select>
 	</div>
@@ -61,7 +61,7 @@
 	                if(r.success) {
 	            		$('#advert-city-add-region option.strict_value').show();
 	                    $.each(r.data, function () {
-	                    	$('#advert-city-add-region').append('<option class="region-item" value="' + this.id + '">' + this.nominative_local + '</option>');
+	                    	$('#advert-city-add-region').append('<option class="region-item" value="' + this.id + '">' + this.name + '</option>');
 	                    });
 	                }
 	            });
@@ -79,7 +79,7 @@
 	                if(r.success) {
 	            		$('#advert-city-add-city option.strict_value').show();
 	                    $.each(r.data, function () {
-	                    	$('#advert-city-add-city').append('<option class="city-item" value="' + this.id + '">' + this.nominative_local + '</option>');
+	                    	$('#advert-city-add-city').append('<option class="city-item" value="' + this.id + '">' + this.name + '</option>');
 	                    });
 	                }
 	            });

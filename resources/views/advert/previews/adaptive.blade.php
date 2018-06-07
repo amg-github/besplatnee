@@ -23,12 +23,17 @@
 
                 <div class="clearfix"></div>
                 @if($advert->show_phone)
-                <div class="post-item-phone block-left">@lang('adverts.phone.short'):
+                <div class="post-item-phone block-left">Тел.:
                     <span>{{ $advert->owner->phone }}</span></div>
                 @endif
                 <div class="post-item-desc-wrapper block-right">
                     
-                        <div class="post-item-subtitle">г. {{ config('area')->getName() }}</div>
+                        <div class="post-item-subtitle">
+                            @if(isset($advert->geoObjects[0]))
+                                г. {{ $advert->geoObjects[0]->name }}
+                            @else
+                                г. {{ config('area')->name }}
+                            @endif</div>
                     
                 </div>
                 <div class="clearfix"></div>
@@ -41,9 +46,7 @@
                     <div class="post-item-desc">
                         <a target="__blank" href="{{ $advert->getUrl() }}" title="@lang('site.phrases.more')">
                             {!! str_limit($advert->content, 300, '...') !!}
-                           
-                                @lang('site.phrases.city.short') {{ config('area')->getName() }}
-                            
+
                         </a>
                     </div>
                     @if($video = $advert->getVideos()->first())
@@ -58,7 +61,13 @@
                     @include('advert.mega')
                 @endif
                 <div class="clearfix"></div>
-
+                @if($advert->contacts)
+                    <div class="post-item-desc-wrapper">
+                        <div class="post-item-tags" style="color: #9c9c9c; font-size: 12px">
+                            Доп. контакты: {{$advert->contacts}}
+                        </div>
+                    </div><br>
+                @endif
                 <div class="post-item-desc-wrapper">
                     <div class="post-item-tags">
                         @foreach($advert->getHeadingPath() as $heading)

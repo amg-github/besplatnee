@@ -28,14 +28,29 @@
         @endif
         <div class="post-item-desc-wrapper">
            
-                <div class="post-item-subtitle">г. {{ config('area')->getName() }}</div>
+                <div class="post-item-subtitle">@if(isset($advert->geoObjects[0]))
+                        г. {{ $advert->geoObjects[0]->name }}
+                    @else
+                        г. {{ config('area')->name }}
+                    @endif</div>
             
-            <div class="post-item-desc">{!! str_limit($advert->content, 300, '...') !!} 
-            
-                                г. {{ config('area')->getName() }}
+            <div class="post-item-desc">{!! str_limit($advert->content, 300, '...') !!}
+
+                @if(isset($advert->geoObjects[0]))
+                    г. {{ $advert->geoObjects[0]->name }}
+                @else
+                    г. {{ config('area')->name }}
+                @endif
                             </div>
             @if($advert->show_phone)
                 <div class="post-item-phone">Тел.: <span>{{ $advert->owner->phone }}</span></div>
+            @endif
+            @if($advert->contacts)
+
+                    <div class="post-item-tags" style="color: #9c9c9c; font-size: 12px">
+                        Доп. контакты: {{$advert->contacts}}
+                    </div>
+                <br>
             @endif
             <div class="post-item-tags">
                 <a target="__blank" href="{{ $advert->getUrl() }}">{{ $advert->main_phrase }}</a>

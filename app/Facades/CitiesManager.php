@@ -2,6 +2,7 @@
 namespace App\Facades;
 
 use App\City;
+use App\GeoObject;
 
 class CitiesManager extends ModelsManager {
 	const TYPE_NOMINATIVE_LOCAL         = 'nominative_local';
@@ -15,7 +16,15 @@ class CitiesManager extends ModelsManager {
 	const TYPE_DATIVE_INTERNATIONAL     = 'dative_international';
 	const TYPE_ERGATIVE_INTERNATIONAL   = 'ergative_international';
 
-	public $model = City::class;
+	public $model = GeoObject::class;
+
+    public function get($id, $removed = false) {
+        if($removed && $this->hasSoftDelete()) {
+            return $this->model::withTrashed()->find($id);
+        } else {
+            return $this->model::find($id);
+        }
+    }
 
 	public function setData($city, $data) {
 		$city->fill($data);
@@ -65,14 +74,14 @@ class CitiesManager extends ModelsManager {
 		/*$aliasTable = (new \App\AreaName)->getTable();
 		$cityTable = (new \App\City)->getTable();*/
 
-		return \App\City::leftJoin('area_names', function ($join) {
-			$join->on('area_names.key', '=', 'cities.name_key');
-		})
-			->where('area_names.language', config('language')->code)
-			->where('active', true)
-			->where('region_id', $region_id)
-			->orderBy('area_names.nominative_local')
-			->get(['area_names.*', 'cities.*']);
+		$cities = \App\GeoObject::where('active', true)
+            ->where('parent_id', $region_id)
+            ->orderBy('name')
+            ->get();
+
+		return $cities;
+
+
 
 		/*$ids = \DB::table($cityTable)
 			->leftJoin($aliasTable, $cityTable . '.name_key', '=', $aliasTable . '.key')
@@ -150,16 +159,16 @@ class CitiesManager extends ModelsManager {
 	}
 
 	public function getCurrencies($country = null) {
-		if($country === null) { $country = \Config::get('area')->country; }
+		if($country === null) { $country = \Config::get('area')->country(); }
 
 		if(!is_object($country)) {
-			$country = \App\Country::find($country);
+			$country = \App\GeoObject::where('oldid', $country);
 		}
 
 		$currencies = \App\Currency::where('is_international', true);
 
 		if($country) {
-			$currencies->orWhere('id', $country->currency);
+			$currencies->orWhere('id', $country->getProps()['currency']);
 		}
 
 		return $currencies->get();

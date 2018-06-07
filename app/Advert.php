@@ -96,15 +96,15 @@ class Advert extends Model
     }
 
     public function countries() {
-        return $this->belongsToMany('App\Country');
+        return $this->belongsToMany('App\GeoObject')->where('type', 'country');
     }
 
     public function regions() {
-        return $this->belongsToMany('App\Region');
+        return $this->belongsToMany('App\GeoObject')->where('type', 'region');
     }
 
     public function cities() {
-        return $this->belongsToMany('App\City');
+        return $this->belongsToMany('App\GeoObject')->where('type', 'city');
     }
 
     public function medias() {
@@ -169,20 +169,8 @@ class Advert extends Model
         $this->properties()->sync($advertProperties);
     }
 
-    public function setCities($cities = []) {
-        $this->cities()->sync($cities);
-    }
-
-    public function setRegions($regions = []) {
-        if(is_array($regions)) {
-            $this->regions()->sync($regions);
-        }
-    }
-
-    public function setCountries($countries = []) {
-        if(is_array($countries)) {
-            $this->countries()->sync($countries);
-        }
+    public function setObjects($objects = []) {
+        $this->geoObjects()->sync($objects);
     }
 
     public function definedLocation() {
@@ -351,6 +339,10 @@ class Advert extends Model
         $this->save();
     }
 
+    public function getInName() {
+        return $this->genitive_name;
+    }
+
     public function getUrl($city_id = null) {
         $city = $city_id == null ? \Config::get('area') : \App\City::find($city_id);
 
@@ -360,8 +352,8 @@ class Advert extends Model
 
         $alias_local = $this->alias_local ? $this->alias_local : $this->localAlias();
         $alias_international = $this->alias_international ? $this->alias_international : $this->internationalAlias($alias_local);
-        $city_local = str_replace(array ('-', ' '), '_', Str::lower($city->getInName()));
-        $city_international = str_replace('-', '_', Str::lower($city->getInternationalInName()));
+        $city_local = str_replace(array ('-', ' '), '_', Str::lower($city->dative_name));
+        $city_international = str_replace('-', '_', Str::lower($city->dative_alias));
 
         return route('advert', [
             'alias_local'           => $alias_local,
@@ -481,7 +473,8 @@ class Advert extends Model
 
                     foreach($properties as $property) {
                         $q->orWhere(function ($q) use ($property) {
-                            $q->where('property_id', $property->id)->where('property_value', $property->pivot->value);
+                            $q->where('property_id', $property->id);
+//                                ->where('property_value', $property->pivot->value);
                         });
                     }
                 })

@@ -49,7 +49,7 @@ class HeadingAlias extends Model
     public function getUrl($sort = null) {
     	return route('category', [
             'alias' => $this->alias_international,
-            'city' => 'v_' . config('area')->getInternationalInName(),
+            'city' => 'v_' . config('area')->genitive_alias,
             'sort' => $sort ? $sort : __('sorts.fakeupdated_at.alias'),
         ]);
     }

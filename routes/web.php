@@ -228,6 +228,7 @@ Route::get('/magazin/{alias}/page/{id}', 'SiteController@page')->name('shoppage'
 Route::get('/magazin/{alias}/product/{id}', 'SiteController@product')->name('product');
 
 
+Route::get('/sql/geoobjects_update', 'HomeController@geoobjects_update');
 
 
 // sitemap
