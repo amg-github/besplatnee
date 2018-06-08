@@ -220,9 +220,16 @@ class AdvertController extends AdminController {
 				'content' => [
 					[
 						'widget' => 'relation',
-						'relation' => 'cities',
-						'view' => function ($city) {
-							return $city->name;
+						'relation' => 'geoObjects',
+						'view' => function ($object) {
+		                    switch ($object->type) {
+                                case 'city':
+							        return 'г. '.$object->name;
+							        break;
+                                default:
+                                    return $object->name;
+                                    break;
+                            }
 						},
 						'separator' => ', ',
 					],
@@ -466,7 +473,6 @@ class AdvertController extends AdminController {
         
 		$data = $request->all();
 
-
         if(isset($data['id']) && intval($data['id']) > 0) {
             $advert = \Besplatnee::adverts()->get($id, true);
             if(\Gate::denies('edit', $advert)) { abort(403); }
@@ -475,6 +481,8 @@ class AdvertController extends AdminController {
         } else {
             $advert = new \App\Advert;
         }
+
+
 
         if(\Gate::denies('give', $advert)) {
             unset($data['owner_id']);
@@ -500,6 +508,7 @@ class AdvertController extends AdminController {
 
         $validator = $this->besplatnee->adverts()->validate($data);
         $this->form_errors = $validator->messages();
+
 
         if(!$validator->fails()) {
 
@@ -543,6 +552,8 @@ class AdvertController extends AdminController {
 
 	        	}
         	}
+
+
 
             if(isset($data['id']) && intval($data['id']) > 0) {
                 $advert = \Besplatnee::adverts()->update($data);
@@ -655,7 +666,7 @@ class AdvertController extends AdminController {
 
 	        	$new_advert->push();
 
-        		$new_advert->cities()->sync([\Config::get('area')->id]);
+        		$new_advert->geoObjects->sync([\Config::get('area')->id]);
 	        }
 	    }
 
@@ -693,7 +704,7 @@ class AdvertController extends AdminController {
 
 	        	$new_advert->push();
 
-        		$new_advert->regions()->sync([\Config::get('area')->region->id]);
+        		$new_advert->geoObjects()->sync([\Config::get('area')->region()->id]);
 	        }
 	    }
 
@@ -731,7 +742,7 @@ class AdvertController extends AdminController {
 
 	        	$new_advert->push();
 
-        		$new_advert->countries()->sync([\Config::get('area')->country->id]);
+        		$new_advert->geoObjects()->sync([\Config::get('area')->country()->id]);
 	        }
 	    }
 

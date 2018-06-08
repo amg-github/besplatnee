@@ -93,9 +93,16 @@ class AdvertSearchQueriesController extends AdminController {
 					[
 						'widget' => 'relation',
 						'relation' => 'citiesNew',
-						'view' => function ($city) {
-							return $city->name;
-						},
+                        'view' => function ($object) {
+                            switch ($object->type) {
+                                case 'city':
+                                    return 'г. '.$object->name;
+                                    break;
+                                default:
+                                    return $object->name;
+                                    break;
+                            }
+                        },
 						'separator' => '<br>',
 					],
 				],
@@ -241,14 +248,14 @@ class AdvertSearchQueriesController extends AdminController {
 				'action' => 'cloneAll',
 				'title' => __('admin.adverts.clone-all'),
 			],
-			// [
-			// 	'action' => 'cloneAllByRegion',
-			// 	'title' => __('admin.adverts.clone-all-region'),
-			// ],
-			// [
-			// 	'action' => 'cloneAllByCountry',
-			// 	'title' => __('admin.adverts.clone-all-country'),
-			// ],
+			 [
+			 	'action' => 'cloneAllByRegion',
+			 	'title' => __('admin.adverts.clone-all-region'),
+			 ],
+			 [
+			 	'action' => 'cloneAllByCountry',
+			 	'title' => __('admin.adverts.clone-all-country'),
+			 ],
 		];
 	}
 
@@ -439,55 +446,59 @@ class AdvertSearchQueriesController extends AdminController {
         return redirect()->route('admin.list', ['model' => $model]);
 	}
 
-	// public function cloneAllByRegion(Request $request, $model, $id) {
-	// 	$ids = $request->input('ids', []);
+	 public function cloneAllByRegion(Request $request, $model, $id) {
+         $ids = $request->input('ids', []);
 
-	// 	if(count($ids) > 0) {
-	// 		$adverts = \App\Advert::whereIn('id', $ids)->get();
-	//         if(!$adverts) { abort(404); }
+         if(count($ids) > 0) {
+             $queries = \App\AdvertSearchQuery::whereIn('id', $ids)->get();
+             if(!$queries) { abort(404); }
 
-	//         foreach($adverts as $advert) {
-	//         	$new_advert = $advert->replicate();
+             foreach($queries as $query) {
 
-	//         	$user_id = \Auth::user()->id;
+                 $new_query = $query->queryCity()->first();
 
-	//         	$new_advert->fill([
-	//         		'owner_id'		=>	$user_id,
-	//         		'creator_id'	=>	$user_id,
-	//         	]);
+                 $new_query->firstOrCreate([
+                     'advert_query_id'   =>  $query->id,
+                     'city_id'           =>  \Config::get('area')->region()->id
+                 ]);
 
-	//         	$new_advert->push();
+                 $query->fill([
+                     'doubled'	=> 1,
+                 ]);
 
- //        		$new_advert->regions()->sync([\Config::get('area')->region->id]);
-	//         }
-	//     }
+                 $query->save();
 
- //        return redirect()->route('admin.list', ['model' => $model]);
-	// }
+             }
+         }
 
-	// public function cloneAllByCountry(Request $request, $model, $id) {
-	// 	$ids = $request->input('ids', []);
+         return redirect()->route('admin.list', ['model' => $model]);
+	 }
 
-	// 	if(count($ids) > 0) {
-	// 		$adverts = \App\Advert::whereIn('id', $ids)->get();
-	//         if(!$adverts) { abort(404); }
+	 public function cloneAllByCountry(Request $request, $model, $id) {
+         $ids = $request->input('ids', []);
 
-	//         foreach($adverts as $advert) {
-	//         	$new_advert = $advert->replicate();
+         if(count($ids) > 0) {
+             $queries = \App\AdvertSearchQuery::whereIn('id', $ids)->get();
+             if(!$queries) { abort(404); }
 
-	//         	$user_id = \Auth::user()->id;
+             foreach($queries as $query) {
 
-	//         	$new_advert->fill([
-	//         		'owner_id'		=>	$user_id,
-	//         		'creator_id'	=>	$user_id,
-	//         	]);
+                 $new_query = $query->queryCity()->first();
 
-	//         	$new_advert->push();
+                 $new_query->firstOrCreate([
+                     'advert_query_id'   =>  $query->id,
+                     'city_id'           =>  \Config::get('area')->country()->id
+                 ]);
 
- //        		$new_advert->countries()->sync([\Config::get('area')->country->id]);
-	//         }
-	//     }
+                 $query->fill([
+                     'doubled'	=> 1,
+                 ]);
 
- //        return redirect()->route('admin.list', ['model' => $model]);
-	// }
+                 $query->save();
+
+             }
+         }
+
+         return redirect()->route('admin.list', ['model' => $model]);
+	 }
 }

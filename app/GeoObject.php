@@ -104,6 +104,7 @@ class GeoObject extends Model {
     	return $this->type == 'city';
     }
 
+
     public function region() {
         switch ($this->type) {
             case 'country':

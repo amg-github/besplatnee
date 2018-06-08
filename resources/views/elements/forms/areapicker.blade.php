@@ -30,12 +30,12 @@
 	];
 
 	if($config['cities']->isNotEmpty()) {
-		$config['regions']->merge(\App\City::whereIn('id', $config['cities'])->pluck('region_id'));
+		$config['regions']->merge(\App\GeoObject::whereIn('id', $config['cities'])->pluck('parent_id'));
 	}
 
 
 	if($config['regions']->isNotEmpty()) {
-		$config['countries']->merge(\App\City::whereIn('id', $config['regions'])->pluck('country_id'));
+		$config['countries']->merge(\App\GeoObject::whereIn('id', $config['regions'])->pluck('country_id'));
 	} else {
 		$config['countries'] = \App\Country::pluck('id');
 	}
@@ -80,7 +80,7 @@
 
 			@foreach(request()->input($config['names']['countries'], []) as $country_id)
 				@if($country_id != config('area')->country_id || $country_id == config('area')->country_id && !$config['controlls']['current']['country'])
-					@if($country = \App\GeoObjec::countries()->where('id',$country_id)->first())
+					@if($country = \App\GeoObject::countries()->where('id',$country_id)->first())
 						<label class="col-xs-3 checkbox-label">
 			    			<input type="checkbox" name="{{ point_to_bracket($config['names']['countries']) }}" value="{{ $country_id }}" checked>
 			    			{{ $country->name }}

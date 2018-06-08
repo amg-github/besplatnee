@@ -31,7 +31,7 @@ class AdvertsManager extends ModelsManager
 	public function setData($advert, $data) {
 		$data = array_merge($this->getEmpty(), $data);
 
-		$data['price'] = floatval(str_replace(' ', '', str_replace(',', '.', $data['price'])));
+        $data['price'] = floatval(str_replace(' ', '', str_replace(',', '.', $data['price'])));
 
 		if(!$data['type']) { 
 			$data['type'] = 4;
@@ -76,14 +76,14 @@ class AdvertsManager extends ModelsManager
                     $this->_increaseTotal($data['region_ids'], $data['heading_id']);
                     $this->_decreaseTotal($data['region_ids'], $advert->heading_id);
                 } else {
-                    $this->_increaseTotal($data['city_ids']);
+                    $this->_increaseTotal($data['region_ids']);
                 }
             } else {
                 $this->_increaseTotal($data['region_ids']);
             }
 		}
 
-		if(isset($data['country_ids'])) { 
+		if(isset($data['country_ids'])) {
 			$advert->setObjects($data['country_ids']);
 
             if (isset($data['id'])) {
@@ -91,7 +91,7 @@ class AdvertsManager extends ModelsManager
                     $this->_increaseTotal($data['country_ids'], $data['heading_id']);
                     $this->_decreaseTotal($data['country_ids'], $advert->heading_id);
                 } else {
-                    $this->_increaseTotal($data['city_ids']);
+                    $this->_increaseTotal($data['country_ids']);
                 }
             } else {
                 $this->_increaseTotal($data['country_ids']);
@@ -140,9 +140,9 @@ class AdvertsManager extends ModelsManager
             'name' => 'required|max:' . Settings::getOption('adverts.name.size', 40),
             'content' => 'required|max:' . Settings::getOption('adverts.content.size', 300),
             'main_phrase' => 'max:' . Settings::getOption('adverts.main_phrase.size', 50),
-            'city_ids.*' => 'required_if:duplicate_in_all_cities,' . Advert::DO_NOT_DUPLICATE_TO_ALL_CITIES . '|exists:cities,id',
-            'region_ids.*' => 'nullable|exists:regions,id',
-            'country_ids.*' => 'nullable|exists:countries,id',
+            'city_ids.*' => 'required_if:duplicate_in_all_cities,' . Advert::DO_NOT_DUPLICATE_TO_ALL_CITIES . '|exists:geo_objects,id',
+            'region_ids.*' => 'nullable|exists:geo_objects,id',
+            'country_ids.*' => 'nullable|exists:geo_objects,id',
             'heading_id' => 'required|exists:headings,id',
             'price' => 'nullable|price',
             'currency_id' => 'nullable|exists:currencies,id',

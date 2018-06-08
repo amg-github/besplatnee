@@ -427,7 +427,7 @@ class AdvertController extends Controller
             case 'world':
                     $gobjects = [];
 
-                    $object_to_count = null;
+                    $object_to_count = "world";
                 break;
             case 'country':
                     $gobjects = array_merge(
@@ -439,7 +439,7 @@ class AdvertController extends Controller
 
                     $gobjects[] = \Config::get('area')->country()->id;
 
-                    $object_to_count = \Config::get('area')->country()->id;
+                    $object_to_count = [\Config::get('area')->country()->id];
                 break;
             case 'region':
                     $gobjects = array_merge(
@@ -450,14 +450,14 @@ class AdvertController extends Controller
 
                     $gobjects[] = \Config::get('area')->region()->id;
 
-                    $object_to_count = \Config::get('area')->region()->id;
+                    $object_to_count = [\Config::get('area')->region()->id];
                 break;
             default:
                     $object_name = mb_convert_case(\Config::get('area')->ergative_name, MB_CASE_LOWER, "UTF-8");
 
                     $gobjects = [$search_area_id];
 
-                    $object_to_count = \Config::get('area')->id;
+                    $object_to_count = [\Config::get('area')->id];
                 break;
         }
 
@@ -510,6 +510,7 @@ class AdvertController extends Controller
                 'object_name'       => $object_name,
                 'object_name_international'       => app('slug')->make($object_name),
                 'gobjects'          => $gobjects,
+                'objects_to_count'  => $object_to_count,
                 'heading'           => $heading,
                 'properties'        => $request->input('properties', []),
                 'search_query'      => $request->input('search_query'),
@@ -534,6 +535,8 @@ class AdvertController extends Controller
         $this->buildSorts();
 
         $gobjects = session('gobjects') ? session('gobjects') : [];
+        $gobjects_to_count = session('objects_to_count') ? session('objects_to_count') : [\Config::get('area')->id];
+
 
         $heading = session('heading') ? session('heading') : [];
         $properties = session('properties') ? session('properties') : [];
@@ -556,7 +559,8 @@ class AdvertController extends Controller
                 'follows'       =>  \DB::raw('follows + 1'),
             ]);
 
-        foreach ($gobjects as $city) {
+        if ($gobjects_to_count != "world")
+        foreach ($gobjects_to_count as $city) {
             $advert_search_query_city = new \App\AdvertSearchQueryCity;
 
             $advert_search_query_city->firstOrCreate([
@@ -614,7 +618,8 @@ class AdvertController extends Controller
             ])->pluck('id')->toJson();
         });
 
-        foreach ($gobjects as $city) {
+        if ($gobjects_to_count != "world")
+        foreach ($gobjects_to_count as $city) {
             $results = new \App\AdvertSearchQueryResult;
 
             $results = $results->updateOrCreate([
